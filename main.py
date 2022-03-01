@@ -81,7 +81,7 @@ gpm = Model('netflow')
 flow = {}
 for h in commodities:
     for i, j in arcs:
-        flow[h, i, j] = gpm.addVar(ub=capacity[i, j], obj=cost[h, i, j],
+        flow[h, i, j] = gpm.addVar(vtype=GRB.INTEGER, ub=capacity[i, j], obj=cost[h, i, j],
                                    name='flow_%s_%s_%s' % (h, i, j))
 gpm.update()
 
@@ -98,6 +98,7 @@ for h in commodities:
             inflow[h, j] ==
             quicksum(flow[h, j, k] for j, k in arcs.select(j, '*')),
             'node_%s_%s' % (h, j))
+
 
 # Only one inflow constraints
 for j in nodes:
@@ -132,7 +133,7 @@ if gpm.status == GRB.Status.OPTIMAL:
     solution = gpm.getAttr('x', flow)
     for h in commodities:
         for i, j in arcs:
-            if solution[h, i, j] > 0.5:
+            if solution[h, i, j] > 0.001:
                 paths.add((i, j))
                 p_set.add((int(i) % m, int(i) // m))
                 p_set.add((int(j) % m, int(j) // m))
@@ -148,13 +149,11 @@ if gpm.status == GRB.Status.OPTIMAL:
 
     for x in paths:
         x, y = x
-        print(x, y)
+
         sx = int(x) % m
         sy = int(x) // m
         ex = int(y) % m
         ey = int(y) // m
-
-        print((sx, sy), (ex, ey))
 
         plt.annotate("",
                      xy=(sx, sy), xycoords='data',
